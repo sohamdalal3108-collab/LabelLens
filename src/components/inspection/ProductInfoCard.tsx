@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { StatutoryDeclarations, ExtractedField } from '@/lib/types/inspection';
-import { ConfidenceBadge } from '@/components/shared/ConfidenceBadge';
-import { Edit2, Check, X, AlertCircle, Info } from 'lucide-react';
+import { StatutoryDeclarations, ExtractedField, getConfidenceLevel, ConfidenceLevel } from '@/lib/types/inspection';
+import { Edit2, Check, X, AlertCircle, Info, CheckCircle2, HelpCircle } from 'lucide-react';
 
 interface ProductInfoCardProps {
   declarations: StatutoryDeclarations;
@@ -44,14 +43,27 @@ export function ProductInfoCard({
 
   return (
     <div className="rounded-lg bg-white border border-[#DBD6CA] shadow-xs overflow-hidden space-y-0">
-      <div className="p-3.5 border-b border-[#E5E2D9] bg-[#FAF8F4] flex items-center justify-between">
+      <div className="p-3.5 border-b border-[#E5E2D9] bg-[#FAF8F4] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-            Extracted Declarations & Confidence
+            OCR Extracted Statutory Declarations
           </h3>
           <p className="text-[11px] text-neutral-500">
-            OCR extracted text lines — Officer verification required for legal determination
+            Raw text parsed by OCR & structured for Legal Metrology compliance verification
           </p>
+        </div>
+
+        {/* Confidence Tier Legend */}
+        <div className="flex items-center gap-2 text-[10px] font-mono">
+          <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold">
+            HIGH ≥85%
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 font-bold">
+            MED 60-84%
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-800 border border-red-300 font-bold">
+            LOW &lt;60%
+          </span>
         </div>
       </div>
 
@@ -60,8 +72,8 @@ export function ProductInfoCard({
         <table className="w-full text-left text-xs data-table">
           <thead>
             <tr>
-              <th className="px-3.5 py-2.5 w-1/4">Field Declaration</th>
-              <th className="px-3.5 py-2.5 w-1/2">Extracted Value</th>
+              <th className="px-3.5 py-2.5 w-1/4">Declaration Field</th>
+              <th className="px-3.5 py-2.5 w-1/2">Declared / Extracted Value</th>
               <th className="px-3.5 py-2.5 w-1/4 text-right">OCR Confidence</th>
             </tr>
           </thead>
@@ -70,7 +82,15 @@ export function ProductInfoCard({
               const isSelected = selectedFieldKey === field.key;
               const isEditing = editingKey === field.key;
               const isMissing = field.extractedValue.includes('[NOT FOUND');
-              const isLowConfidence = field.confidence < 0.60;
+              const tier: ConfidenceLevel = getConfidenceLevel(field.confidence);
+              const percentage = Math.round(field.confidence * 100);
+
+              const tierBadgeClass =
+                tier === 'HIGH'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : tier === 'MEDIUM'
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : 'bg-red-50 text-red-800 border-red-300';
 
               return (
                 <tr
@@ -78,11 +98,11 @@ export function ProductInfoCard({
                   onClick={() => onSelectField(field.key)}
                   className={`cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-orange-50/70 font-semibold'
+                      ? 'bg-orange-50/80 font-semibold'
                       : isMissing
                       ? 'bg-red-50/50'
-                      : isLowConfidence
-                      ? 'bg-amber-50/50'
+                      : tier === 'LOW'
+                      ? 'bg-amber-50/40'
                       : 'hover:bg-[#FBF9F5]'
                   }`}
                 >
@@ -104,7 +124,7 @@ export function ProductInfoCard({
                           type="text"
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="flex-1 px-2 py-1 text-xs bg-white border border-orange-500 rounded text-neutral-900 focus:outline-none font-mono shadow-xs"
+                          className="flex-1 px-2.5 py-1 text-xs bg-white border border-orange-500 rounded text-neutral-900 focus:outline-none font-mono shadow-xs"
                           autoFocus
                         />
                         <button
@@ -136,10 +156,10 @@ export function ProductInfoCard({
                             </span>
                           )}
 
-                          {isLowConfidence && !isMissing && (
+                          {tier === 'LOW' && !isMissing && (
                             <div className="text-[10px] text-amber-800 font-medium flex items-center gap-1 mt-0.5">
                               <AlertCircle className="w-3 h-3 shrink-0 text-amber-600" />
-                              <span>Manual verification recommended (glare/reflection)</span>
+                              <span>Manual officer verification advised (surface glare or reflection)</span>
                             </div>
                           )}
                         </div>
@@ -155,9 +175,13 @@ export function ProductInfoCard({
                     )}
                   </td>
 
-                  {/* OCR Confidence */}
+                  {/* OCR Confidence with explicit tier */}
                   <td className="px-3.5 py-2.5 align-top text-right whitespace-nowrap">
-                    <ConfidenceBadge score={field.confidence} size="sm" />
+                    <div className="inline-flex flex-col items-end gap-0.5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${tierBadgeClass}`}>
+                        {tier} ({percentage}%)
+                      </span>
+                    </div>
                   </td>
                 </tr>
               );
@@ -168,4 +192,3 @@ export function ProductInfoCard({
     </div>
   );
 }
-

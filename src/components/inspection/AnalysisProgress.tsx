@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle2, Loader2, Circle } from 'lucide-react';
+import { CheckCircle2, Loader2, Circle, Camera, ScanText, ShieldCheck, CheckSquare } from 'lucide-react';
 
 interface AnalysisProgressProps {
   currentStep: number;
@@ -9,11 +9,10 @@ interface AnalysisProgressProps {
 }
 
 const STAGES = [
-  { step: 1, label: 'Image quality & perspective check' },
-  { step: 2, label: 'OCR statutory text extraction' },
-  { step: 3, label: 'Legal field identification' },
-  { step: 4, label: 'Rules 6, 7 & 12 compliance evaluation' },
-  { step: 5, label: 'Spatial evidence assembly' }
+  { step: 1, key: 'CAPTURING', label: 'CAPTURING: Package Image Perspective & Quality Check', icon: Camera },
+  { step: 2, key: 'EXTRACTING', label: 'EXTRACTING: OCR Statutory Text & Coordinate Mapping', icon: ScanText },
+  { step: 3, key: 'CHECKING', label: 'CHECKING: Rules 6, 7 & 12 Compliance & Confidence Tiers', icon: ShieldCheck },
+  { step: 4, key: 'REVIEW_READY', label: 'REVIEW READY: Spatial Evidence & Findings Assembled', icon: CheckSquare }
 ];
 
 export function AnalysisProgress({ currentStep, logs = [] }: AnalysisProgressProps) {
@@ -21,18 +20,18 @@ export function AnalysisProgress({ currentStep, logs = [] }: AnalysisProgressPro
     <div className="rounded-lg bg-white border border-[#DBD6CA] shadow-sm p-6 sm:p-7 max-w-md mx-auto space-y-6">
       <div className="space-y-1">
         <div className="text-[11px] font-bold text-orange-600 font-mono uppercase tracking-wider">
-          AI PIPELINE EXECUTION
+          EVIDENCE PIPELINE EXECUTION
         </div>
         <h2 className="text-lg font-black text-neutral-900 tracking-tight">
-          Processing Label Evidence
+          Analyzing Physical Label Evidence
         </h2>
         <p className="text-xs text-neutral-500">
           Evaluating declarations under Legal Metrology (Packaged Commodities) Rules, 2011.
         </p>
       </div>
 
-      {/* Clean 5-Stage Checklist */}
-      <div className="space-y-2">
+      {/* Clean 4-Stage Checklist: CAPTURING -> EXTRACTING -> CHECKING -> REVIEW READY */}
+      <div className="space-y-2.5">
         {STAGES.map((stage) => {
           const isDone = currentStep > stage.step;
           const isCurrent = currentStep === stage.step;
@@ -40,7 +39,7 @@ export function AnalysisProgress({ currentStep, logs = [] }: AnalysisProgressPro
           return (
             <div
               key={stage.step}
-              className={`flex items-center gap-3 p-2.5 rounded-md border text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-3 p-3 rounded-md border text-xs font-semibold transition-colors ${
                 isCurrent
                   ? 'bg-orange-50 border-orange-300 text-orange-950 shadow-2xs'
                   : isDone
@@ -84,4 +83,3 @@ export function AnalysisProgress({ currentStep, logs = [] }: AnalysisProgressPro
     </div>
   );
 }
-

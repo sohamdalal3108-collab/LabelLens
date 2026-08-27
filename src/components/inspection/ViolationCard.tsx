@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RuleViolation } from '@/lib/types/inspection';
-import { AlertTriangle, Scale, Check, X, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { RuleViolation, getConfidenceLevel } from '@/lib/types/inspection';
+import { AlertTriangle, Scale, Check, X, BookOpen, ChevronDown, ChevronUp, Target, ShieldAlert } from 'lucide-react';
 
 interface ViolationCardProps {
   violation: RuleViolation;
@@ -34,11 +34,13 @@ export function ViolationCard({
   };
 
   const isDismissed = violation.isDismissedByOfficer;
+  const confTier = getConfidenceLevel(violation.confidence);
+  const confPercentage = Math.round(violation.confidence * 100);
 
   return (
     <div
       onClick={onSelect}
-      className={`rounded-lg border transition-all cursor-pointer p-4.5 ${
+      className={`rounded-lg border transition-all cursor-pointer p-4.5 space-y-3 ${
         isDismissed
           ? 'bg-neutral-100 border-neutral-300 opacity-60'
           : isSelected
@@ -61,7 +63,7 @@ export function ViolationCard({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span
-                className={`text-xs font-bold ${
+                className={`text-xs font-black ${
                   isDismissed ? 'line-through text-neutral-500' : 'text-neutral-900'
                 }`}
               >
@@ -76,9 +78,12 @@ export function ViolationCard({
               >
                 {violation.severity}
               </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-100 text-neutral-700 border border-neutral-200 font-bold">
+                {confTier} CONFIDENCE ({confPercentage}%)
+              </span>
             </div>
             <div className="text-[11px] text-neutral-500 font-mono mt-0.5">
-              {violation.legalActSection}
+              Citation: {violation.legalActSection}
             </div>
           </div>
         </div>
@@ -88,38 +93,67 @@ export function ViolationCard({
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          className="text-neutral-500 hover:text-neutral-900"
+          className="text-neutral-500 hover:text-neutral-900 p-1"
         >
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>
 
       {expanded && (
-        <div className="mt-3 space-y-2.5 text-xs">
-          <p className="text-neutral-700 leading-relaxed bg-[#FAF8F4] p-3 rounded-md border border-[#E5E2D9] text-[11px]">
-            {violation.description}
-          </p>
+        <div className="space-y-2.5 text-xs">
+          {/* Detected Issue Description */}
+          <div className="p-3 rounded-md bg-[#FAF8F4] border border-[#E5E2D9] space-y-1">
+            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
+              Detected Issue (AI Analysis Finding):
+            </span>
+            <p className="text-neutral-800 leading-relaxed text-[11px]">
+              {violation.description}
+            </p>
+          </div>
 
+          {/* Observed vs Statutory Requirement Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
             <div className="p-2.5 rounded bg-white border border-red-200">
-              <span className="text-neutral-500 block font-bold text-[10px] uppercase">Detected Observation:</span>
-              <span className="text-red-700 font-mono font-bold">
+              <span className="text-neutral-500 block font-bold text-[10px] uppercase">Observed on Label:</span>
+              <span className="text-red-700 font-mono font-bold text-xs mt-0.5 block">
                 {violation.extractedValueFound}
               </span>
             </div>
             <div className="p-2.5 rounded bg-white border border-emerald-200">
               <span className="text-neutral-500 block font-bold text-[10px] uppercase">Statutory Requirement:</span>
-              <span className="text-emerald-700 font-mono font-bold">
+              <span className="text-emerald-700 font-mono font-bold text-xs mt-0.5 block">
                 {violation.expectedRequirement}
               </span>
             </div>
           </div>
 
-          <div className="p-2.5 rounded bg-[#FAF8F4] border border-[#E5E2D9] flex items-start gap-2 text-[11px]">
-            <Scale className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+          {/* Evidence Location & Remedy */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+            <div className="p-2 rounded bg-white border border-[#DBD6CA] flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+              <div>
+                <span className="text-[10px] font-bold text-neutral-500 uppercase block">Evidence Region:</span>
+                <span className="font-mono text-neutral-800 text-[10px]">
+                  {violation.evidenceBoundingBox?.label || 'Package Principal Display Panel'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-[#DBD6CA] flex items-center gap-1.5">
+              <Scale className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+              <div>
+                <span className="text-[10px] font-bold text-neutral-500 uppercase block">Statutory Section:</span>
+                <span className="font-mono text-neutral-800 text-[10px]">{violation.ruleCode}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Suggested Enforcement Action */}
+          <div className="p-2.5 rounded bg-orange-50/60 border border-orange-200 text-[11px] text-neutral-800 flex items-start gap-2">
+            <ShieldAlert className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-neutral-900 block text-[10px] uppercase">Recommended Officer Action:</span>
-              <span className="text-neutral-700 font-medium">{violation.suggestedAction}</span>
+              <span className="font-bold text-neutral-900 block text-[10px] uppercase">Suggested Officer Action:</span>
+              <span>{violation.suggestedAction}</span>
             </div>
           </div>
 
@@ -179,7 +213,7 @@ export function ViolationCard({
                   className="text-orange-700 hover:text-orange-800 flex items-center gap-1 font-bold"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Rule Reference</span>
+                  <span>Rule Reference Handbook</span>
                 </button>
               )}
               <button
@@ -198,4 +232,3 @@ export function ViolationCard({
     </div>
   );
 }
-

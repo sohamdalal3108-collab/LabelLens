@@ -46,23 +46,19 @@ export function InspectionProvider({ children }: { children: React.ReactNode }) 
   }): Promise<InspectionRecord> => {
     setIsAnalyzing(true);
     setAnalysisStep(1);
-    setAnalysisLogs(['[1/5] Image quality check: resolution & lighting acceptable.']);
-
-    await new Promise((r) => setTimeout(r, 400));
-    setAnalysisStep(2);
-    setAnalysisLogs((prev) => [...prev, '[2/5] OCR text extraction running across packaging surface.']);
+    setAnalysisLogs(['[1/4] CAPTURING: Package image perspective & quality check.']);
 
     await new Promise((r) => setTimeout(r, 450));
+    setAnalysisStep(2);
+    setAnalysisLogs((prev) => [...prev, '[2/4] EXTRACTING: OCR statutory text lines & spatial bounding coordinates.']);
+
+    await new Promise((r) => setTimeout(r, 500));
     setAnalysisStep(3);
-    setAnalysisLogs((prev) => [...prev, '[3/5] Identifying statutory fields (MRP, Net Qty, Dates, Address).']);
+    setAnalysisLogs((prev) => [...prev, '[3/4] CHECKING: Evaluating Rules 6, 7, 9 & 12 compliance & confidence tiers.']);
 
     await new Promise((r) => setTimeout(r, 450));
     setAnalysisStep(4);
-    setAnalysisLogs((prev) => [...prev, '[4/5] Evaluating Legal Metrology (Packaged Commodities) Rules, 2011.']);
-
-    await new Promise((r) => setTimeout(r, 400));
-    setAnalysisStep(5);
-    setAnalysisLogs((prev) => [...prev, '[5/5] Synthesizing bounding box evidence and officer verification workspace.']);
+    setAnalysisLogs((prev) => [...prev, '[4/4] REVIEW READY: Assembling evidence viewport and officer workspace.']);
 
     try {
       const result = await InspectionService.analyzePackage({

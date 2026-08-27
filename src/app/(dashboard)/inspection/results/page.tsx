@@ -18,7 +18,14 @@ import {
   Printer,
   HelpCircle,
   CheckCircle2,
-  Scale
+  Scale,
+  RefreshCw,
+  Camera,
+  Edit3,
+  Check,
+  X,
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -40,9 +47,12 @@ export default function ResultsPage() {
   if (!activeInspection) {
     return (
       <div className="rounded-lg bg-white border border-[#DBD6CA] p-8 text-center max-w-md mx-auto my-12 space-y-3 shadow-xs">
+        <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mx-auto font-bold">
+          <Scale className="w-5 h-5" />
+        </div>
         <h3 className="text-sm font-bold text-neutral-900">No Active Inspection Record</h3>
         <p className="text-xs text-neutral-500">
-          Capture a package image or select a demo test case to view findings.
+          Capture a package image or select a benchmark scenario to inspect declarations.
         </p>
         <Link
           href="/inspection/new"
@@ -56,9 +66,14 @@ export default function ResultsPage() {
 
   // Extract all bounding boxes
   const boundingBoxes: BoundingBox[] = [];
+  const declarationsDict: Record<string, ExtractedField | undefined> = {};
+
   Object.values(activeInspection.declarations).forEach((field) => {
-    if (field && typeof field === 'object' && 'boundingBox' in field && field.boundingBox) {
-      boundingBoxes.push(field.boundingBox);
+    if (field && typeof field === 'object' && 'key' in field) {
+      declarationsDict[field.key] = field;
+      if (field.boundingBox) {
+        boundingBoxes.push(field.boundingBox);
+      }
     }
   });
 
@@ -99,10 +114,51 @@ export default function ResultsPage() {
   };
 
   const violationsCount = activeInspection.violations.filter((v) => !v.isDismissedByOfficer).length;
+  const isManualReview = activeInspection.status === 'MANUAL_REVIEW';
 
   return (
     <div className="space-y-4">
-      {/* Top Header */}
+      {/* 1. PIPELINE EXECUTION BREADCRUMB BAR (Judge Evidence Chain) */}
+      <div className="bg-white border border-[#DBD6CA] rounded-lg p-3 shadow-xs">
+        <div className="flex items-center justify-between overflow-x-auto pb-1 text-xs">
+          <div className="flex items-center gap-1.5 text-neutral-800 font-bold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-neutral-900 text-white font-mono text-[10px]">01</span>
+            <span>PACKAGE IMAGE</span>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          </div>
+
+          <div className="flex items-center gap-1.5 text-neutral-800 font-bold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-neutral-900 text-white font-mono text-[10px]">02</span>
+            <span>OCR EXTRACTION</span>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          </div>
+
+          <div className="flex items-center gap-1.5 text-neutral-800 font-bold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-neutral-900 text-white font-mono text-[10px]">03</span>
+            <span>CONFIDENCE</span>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          </div>
+
+          <div className="flex items-center gap-1.5 text-neutral-800 font-bold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-neutral-900 text-white font-mono text-[10px]">04</span>
+            <span>COMPLIANCE CHECK</span>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          </div>
+
+          <div className="flex items-center gap-1.5 text-neutral-800 font-bold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-orange-600 text-white font-mono text-[10px]">05</span>
+            <span className="text-orange-950 font-black">FINDINGS</span>
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          </div>
+
+          <div className="flex items-center gap-1.5 text-neutral-800 font-bold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-neutral-900 text-white font-mono text-[10px]">06</span>
+            <span>OFFICER VERIFICATION</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Top Header & Action Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DBD6CA]">
         <div className="flex items-center gap-3">
           <Link
@@ -142,12 +198,60 @@ export default function ResultsPage() {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Generate Notice</span>
+            <span>Generate Statutory Notice</span>
           </Link>
         </div>
       </div>
 
-      {/* Mobile Switcher */}
+      {/* 3. Manual Review Required Banner (if low OCR confidence or surface glare) */}
+      {isManualReview && (
+        <div className="rounded-lg bg-amber-50 border border-amber-300 p-4 space-y-3 shadow-xs">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="p-1 rounded bg-amber-100 text-amber-800 border border-amber-300 mt-0.5">
+                <HelpCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                  MANUAL REVIEW REQUIRED — Low OCR Confidence / Insufficient Evidence
+                </h3>
+                <p className="text-xs text-amber-900/90 mt-0.5 leading-normal">
+                  {activeInspection.manualReviewReasons?.[0] ||
+                    'Package curved surface or reflection glare resulted in low character recognition confidence. Uncertain data is not automatically classified as a violation.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200/80 text-xs font-bold">
+            <span className="text-[11px] text-amber-950 uppercase tracking-wider">Required Officer Actions:</span>
+            <Link
+              href="/inspection/new"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-white hover:bg-neutral-100 text-neutral-800 border border-[#DBD6CA] shadow-2xs"
+            >
+              <Camera className="w-3.5 h-3.5 text-orange-600" />
+              <span>Retake Image</span>
+            </Link>
+
+            <button
+              onClick={() => setActiveTab('DECLARATIONS')}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-white hover:bg-neutral-100 text-neutral-800 border border-[#DBD6CA] shadow-2xs"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-orange-600" />
+              <span>Correct Extracted Field</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('SIGN_OFF')}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-amber-700 hover:bg-amber-800 text-white shadow-2xs"
+            >
+              <span>Record Officer Physical Verification</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Mobile View Switcher */}
       <div className="lg:hidden flex p-1 bg-white rounded-md border border-[#DBD6CA] text-xs font-bold shadow-2xs">
         <button
           onClick={() => setMobileView('EVIDENCE')}
@@ -167,7 +271,7 @@ export default function ResultsPage() {
         </button>
       </div>
 
-      {/* Dual-Pane Layout */}
+      {/* 5. Dual-Pane Inspection Results Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left: Package Image with Spatial Bounding Box Overlays */}
         <div
@@ -183,6 +287,7 @@ export default function ResultsPage() {
             onSelectBox={handleSelectField}
             onHoverBox={setHoveredBoxId}
             violationsCount={violationsCount}
+            declarations={declarationsDict}
           />
         </div>
 
@@ -227,7 +332,7 @@ export default function ResultsPage() {
               }`}
             >
               <Stamp className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Officer Sign-off</span>
+              <span>Officer Verification</span>
             </button>
           </div>
 
@@ -244,31 +349,14 @@ export default function ResultsPage() {
           {/* Tab 2: Compliance Findings */}
           {activeTab === 'VIOLATIONS' && (
             <div className="space-y-3">
-              {/* Manual Review Clarification if active */}
-              {activeInspection.status === 'MANUAL_REVIEW' && (
-                <div className="rounded-lg bg-amber-50 border border-amber-300 p-4 space-y-2 shadow-xs">
-                  <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
-                    <HelpCircle className="w-4 h-4 text-amber-700" />
-                    <span>Manual Review Required (Uncertain OCR)</span>
-                  </div>
-                  <p className="text-xs text-amber-900/90 leading-normal">
-                    {activeInspection.manualReviewReasons?.[0] ||
-                      'OCR confidence is low because of package surface glare or reflection.'}
-                  </p>
-                  <div className="text-[11px] text-amber-800 bg-white p-2 rounded border border-amber-200">
-                    <span className="font-bold text-amber-950">Recommended Action:</span> Capture a clearer image or verify the declaration manually on the physical sample. Low confidence is not automatically classified as a legal violation.
-                  </div>
-                </div>
-              )}
-
               {activeInspection.violations.length === 0 ? (
                 <div className="rounded-lg bg-white border border-[#DBD6CA] p-8 text-center space-y-1.5 shadow-xs">
                   <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
                   <h4 className="text-sm font-bold text-neutral-900">
-                    All Statutory Declarations Satisfied
+                    All Mandatory Declarations Satisfied
                   </h4>
                   <p className="text-xs text-neutral-500">
-                    No violations detected under Rules 6, 7 & 9 of Legal Metrology (Packaged Commodities) Rules, 2011.
+                    No statutory violations detected under Rules 6, 7 & 9 of Legal Metrology (Packaged Commodities) Rules, 2011.
                   </p>
                 </div>
               ) : (
@@ -306,4 +394,3 @@ export default function ResultsPage() {
     </div>
   );
 }
-
