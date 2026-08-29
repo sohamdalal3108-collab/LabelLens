@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useDemoMode } from '@/lib/context/DemoModeContext';
 import { useAuth } from '@/lib/context/AuthContext';
+import { useInspection } from '@/lib/context/InspectionContext';
 import { LEGAL_METROLOGY_RULES_2011 } from '@/config/legalMetrologyRules';
-import { MockInspectionService } from '@/lib/mock/mockService';
 import {
   User,
   Database,
@@ -18,11 +18,12 @@ import {
 export default function SettingsPage() {
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { officer } = useAuth();
+  const { resetToDefaultDataset } = useInspection();
   const [apiUrl, setApiUrl] = useState('http://localhost:8000/api/v1');
   const [resetSuccess, setResetSuccess] = useState(false);
 
   const handleResetData = () => {
-    MockInspectionService.resetToDefaultDataset();
+    resetToDefaultDataset();
     setResetSuccess(true);
     setTimeout(() => setResetSuccess(false), 2500);
   };
@@ -57,12 +58,12 @@ export default function SettingsPage() {
             <span className="font-bold text-neutral-900 text-sm mt-0.5 block">{officer?.name || 'Rajesh Sharma'}</span>
           </div>
           <div className="p-3.5 rounded bg-[#FAF8F4] border border-[#DBD6CA]">
-            <span className="text-[10px] text-neutral-500 block uppercase font-bold">Badge / Authorization ID</span>
-            <span className="font-mono font-bold text-neutral-900 text-sm mt-0.5 block">{officer?.badgeNumber || 'LM-DEL-2024-88'}</span>
+            <span className="text-[10px] text-neutral-500 block uppercase font-bold">Authorized Inspector Email</span>
+            <span className="font-mono font-bold text-neutral-900 text-sm mt-0.5 block truncate">{officer?.email || 'inspector@example.com'}</span>
           </div>
           <div className="p-3.5 rounded bg-[#FAF8F4] border border-[#DBD6CA]">
-            <span className="text-[10px] text-neutral-500 block uppercase font-bold">Designation</span>
-            <span className="font-medium text-neutral-900 text-sm mt-0.5 block">{officer?.designation || 'Senior Legal Metrology Inspector'}</span>
+            <span className="text-[10px] text-neutral-500 block uppercase font-bold">Designation & Badge</span>
+            <span className="font-medium text-neutral-900 text-sm mt-0.5 block">{officer?.designation || 'Senior Legal Metrology Inspector'} ({officer?.badgeNumber || 'LM-DEL-2024-88'})</span>
           </div>
         </div>
       </div>

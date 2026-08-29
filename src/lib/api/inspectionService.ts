@@ -47,6 +47,25 @@ export const InspectionService = {
     }
   },
 
+  /**
+   * =========================================================================
+   * INSPECTION ANALYSIS PIPELINE
+   * =========================================================================
+   * Currently routes to the isolated frontend MockInspectionService engine.
+   * 
+   * FUTURE FASTAPI OCR INTEGRATION POINT:
+   * When the FastAPI backend (e.g., Python EasyOCR / PaddleOCR + Rules Engine)
+   * is connected, replace the mock call below with:
+   * 
+   * ```ts
+   * const formData = new FormData();
+   * if (fileOrUrl instanceof File) formData.append('image', fileOrUrl);
+   * else if (typeof fileOrUrl === 'string') formData.append('image_url', fileOrUrl);
+   * formData.append('input_mode', mode);
+   * const response = await requestApi<InspectionRecord>('/inspection/analyze', { method: 'POST', body: formData });
+   * return response.data;
+   * ```
+   */
   async analyzePackage(params: {
     fileOrUrl?: File | string;
     sampleId?: string;
@@ -55,39 +74,23 @@ export const InspectionService = {
     retailerName?: string;
     retailerAddress?: string;
   }): Promise<InspectionRecord> {
-    const { fileOrUrl, sampleId, mode = 'CAMERA_CAPTURE' } = params;
-
-    if (isDemoModeActive() || sampleId) {
-      return MockInspectionService.simulateAnalyzeImage(
-        fileOrUrl,
-        sampleId,
-        mode === 'DEMO_SAMPLE' ? 'FILE_UPLOAD' : mode
-      );
-    }
+    const { fileOrUrl, sampleId, mode = 'CAMERA_CAPTURE', commodityHint } = params;
 
     try {
-      const formData = new FormData();
-      if (fileOrUrl instanceof File) {
-        formData.append('image', fileOrUrl);
-      } else if (typeof fileOrUrl === 'string') {
-        formData.append('image_url', fileOrUrl);
-      }
-      formData.append('input_mode', mode);
-      if (params.commodityHint) formData.append('commodity_hint', params.commodityHint);
-      if (params.retailerName) formData.append('retailer_name', params.retailerName);
-
-      const response = await requestApi<InspectionRecord>('/inspection/analyze', {
-        method: 'POST',
-        body: formData
-      });
-
-      return response.data;
+      // Safe, isolated frontend mock analysis (no live backend required)
+      return await MockInspectionService.simulateAnalyzeImage(
+        fileOrUrl,
+        sampleId,
+        mode === 'DEMO_SAMPLE' ? 'FILE_UPLOAD' : mode,
+        commodityHint
+      );
     } catch (err) {
-      console.warn('Backend OCR analysis failed, falling back to mock simulation:', err);
+      console.warn('Analysis execution encountered an error, using safe fallback:', err);
       return MockInspectionService.simulateAnalyzeImage(
         fileOrUrl,
         'sample-biscuit',
-        mode === 'DEMO_SAMPLE' ? 'FILE_UPLOAD' : mode
+        mode === 'DEMO_SAMPLE' ? 'FILE_UPLOAD' : mode,
+        commodityHint
       );
     }
   },
@@ -115,7 +118,34 @@ export const InspectionService = {
     }
   },
 
+  async correctExtractedField(
+    inspectionId: string,
+    fieldKey: string,
+    correctedValue: string
+  ): Promise<InspectionRecord> {
+    return MockInspectionService.correctExtractedField(inspectionId, fieldKey, correctedValue);
+  },
+
+  async dismissViolation(
+    inspectionId: string,
+    violationId: string,
+    reason: string
+  ): Promise<InspectionRecord> {
+    return MockInspectionService.dismissViolation(inspectionId, violationId, reason);
+  },
+
+  async reinstateViolation(
+    inspectionId: string,
+    violationId: string
+  ): Promise<InspectionRecord> {
+    return MockInspectionService.reinstateViolation(inspectionId, violationId);
+  },
+
   async getSampleScenarios(): Promise<SamplePackageScenario[]> {
     return MockInspectionService.getSampleScenarios();
+  },
+
+  resetToDefaultDataset(): InspectionRecord[] {
+    return MockInspectionService.resetToDefaultDataset();
   }
 };

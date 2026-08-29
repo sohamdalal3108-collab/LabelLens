@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { InspectionRecord } from '@/lib/types/inspection';
-import { InspectionService } from '@/lib/api/inspectionService';
+import { useInspection } from '@/lib/context/InspectionContext';
 import { ComplianceBadge } from '@/components/shared/ComplianceBadge';
 import { formatDateTime } from '@/lib/utils/formatters';
 import {
@@ -14,7 +14,9 @@ import {
   FileCheck2,
   Lock,
   Stamp,
-  UserCheck
+  UserCheck,
+  Edit3,
+  Scan
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,6 +24,7 @@ export default function InspectionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
+  const { loadInspectionById, setActiveInspection } = useInspection();
   const [inspection, setInspection] = useState<InspectionRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +32,7 @@ export default function InspectionDetailPage() {
     async function load() {
       if (!id) return;
       try {
-        const record = await InspectionService.getInspectionById(id);
+        const record = await loadInspectionById(id);
         setInspection(record);
       } catch (err) {
         console.error('Failed to load inspection record:', err);
@@ -38,7 +41,7 @@ export default function InspectionDetailPage() {
       }
     }
     load();
-  }, [id]);
+  }, [id, loadInspectionById]);
 
   if (loading) {
     return (
@@ -86,13 +89,25 @@ export default function InspectionDetailPage() {
           </div>
         </div>
 
-        <Link
-          href="/reports"
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs self-start sm:self-auto transition-colors"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          <span>Export Statutory Notice</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/inspection/results"
+            onClick={() => setActiveInspection(inspection)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-[#FAF8F4] text-neutral-800 border border-[#DBD6CA] text-xs font-bold shadow-2xs transition-colors"
+          >
+            <Scan className="w-3.5 h-3.5 text-orange-600" />
+            <span>Inspection Workspace</span>
+          </Link>
+
+          <Link
+            href="/reports"
+            onClick={() => setActiveInspection(inspection)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs self-start sm:self-auto transition-colors"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Export Statutory Notice</span>
+          </Link>
+        </div>
       </div>
 
       {/* Overview Grid */}

@@ -167,6 +167,10 @@ export interface SamplePackageScenario {
   sampleData: InspectionRecord;
 }
 
+export type Inspection = InspectionRecord;
+export type InspectionStatus = ComplianceStatus;
+export type DemoCase = SamplePackageScenario;
+
 /**
  * Helper to compute confidence level tier
  */
@@ -174,4 +178,20 @@ export function getConfidenceLevel(confidence: number): ConfidenceLevel {
   if (confidence >= 0.85) return 'HIGH';
   if (confidence >= 0.60) return 'MEDIUM';
   return 'LOW';
+}
+
+/**
+ * Helper to get human-readable status badge label
+ */
+export function formatInspectionStatus(status: ComplianceStatus): string {
+  switch (status) {
+    case 'COMPLIANT':
+      return 'Compliant';
+    case 'POTENTIAL_VIOLATION':
+      return 'Potential Violation';
+    case 'MANUAL_REVIEW':
+      return 'Manual Review Required';
+    default:
+      return status;
+  }
 }

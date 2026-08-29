@@ -1,38 +1,32 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useInspection } from '@/lib/context/InspectionContext';
-import { InspectionRecord } from '@/lib/types/inspection';
-import { InspectionService } from '@/lib/api/inspectionService';
 import { ReportPreview } from '@/components/reports/ReportPreview';
-import { FileText, Printer, Scale } from 'lucide-react';
+import { Scale } from 'lucide-react';
 
 export default function ReportsPage() {
-  const { activeInspection, setActiveInspection } = useInspection();
-  const [inspectionsList, setInspectionsList] = useState<InspectionRecord[]>([]);
+  const { inspections, activeInspection, setActiveInspection } = useInspection();
   const [selectedId, setSelectedId] = useState<string>(activeInspection?.id || '');
 
   useEffect(() => {
-    async function load() {
-      const records = await InspectionService.getInspections();
-      setInspectionsList(records);
-      if (!selectedId && records.length > 0) {
-        setSelectedId(records[0].id);
-        setActiveInspection(records[0]);
-      }
+    if (activeInspection?.id) {
+      setSelectedId(activeInspection.id);
+    } else if (inspections.length > 0) {
+      setSelectedId(inspections[0].id);
+      setActiveInspection(inspections[0]);
     }
-    load();
-  }, []);
+  }, [activeInspection, inspections, setActiveInspection]);
 
   const handleSelectRecord = (id: string) => {
     setSelectedId(id);
-    const found = inspectionsList.find((r) => r.id === id);
+    const found = inspections.find((r) => r.id === id);
     if (found) {
       setActiveInspection(found);
     }
   };
 
-  const currentRecord = inspectionsList.find((r) => r.id === selectedId) || activeInspection;
+  const currentRecord = inspections.find((r) => r.id === selectedId) || activeInspection || (inspections.length > 0 ? inspections[0] : null);
 
   return (
     <div className="space-y-6">
@@ -56,9 +50,9 @@ export default function ReportsPage() {
             onChange={(e) => handleSelectRecord(e.target.value)}
             className="w-full sm:w-80 px-3 py-2 text-xs bg-[#FAF8F4] border border-[#DBD6CA] rounded text-neutral-900 focus:outline-none focus:border-orange-500 font-medium shadow-2xs"
           >
-            {inspectionsList.map((item) => (
+            {inspections.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.inspectionNumber} — {item.brandName} ({item.status})
+                {item.inspectionNumber} — {item.brandName} ({item.status.replace(/_/g, ' ')})
               </option>
             ))}
           </select>

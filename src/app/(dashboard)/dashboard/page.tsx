@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useDemoMode } from '@/lib/context/DemoModeContext';
-import { InspectionRecord } from '@/lib/types/inspection';
-import { InspectionService } from '@/lib/api/inspectionService';
+import { useInspection } from '@/lib/context/InspectionContext';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { RecentInspections } from '@/components/dashboard/RecentInspections';
 import {
@@ -23,27 +22,12 @@ import {
 export default function DashboardPage() {
   const { officer } = useAuth();
   const { isDemoMode } = useDemoMode();
-  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { inspections, metrics, isLoadingRecords } = useInspection();
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const records = await InspectionService.getInspections();
-        setInspections(records);
-      } catch (err) {
-        console.error('Failed to load dashboard inspections:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  const totalInspections = inspections.length;
-  const violations = inspections.filter((i) => i.status === 'POTENTIAL_VIOLATION').length;
-  const verifiedCompliant = inspections.filter((i) => i.status === 'COMPLIANT').length;
-  const pendingManualReview = inspections.filter((i) => i.status === 'MANUAL_REVIEW').length;
+  const totalInspections = metrics.total;
+  const violations = metrics.violations;
+  const verifiedCompliant = metrics.compliant;
+  const pendingManualReview = metrics.manualReview;
 
   return (
     <div className="space-y-6">

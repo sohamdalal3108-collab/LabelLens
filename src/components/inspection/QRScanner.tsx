@@ -109,10 +109,34 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
         )}
 
         {cameraError && (
-          <div className="absolute inset-0 bg-neutral-900 p-6 flex flex-col items-center justify-center text-center space-y-2">
-            <AlertCircle className="w-8 h-8 text-amber-400" />
-            <div className="text-xs font-bold text-white">Camera Unavailable</div>
-            <p className="text-[11px] text-neutral-400 max-w-xs">{cameraError}</p>
+          <div className="absolute inset-0 bg-[#FAF8F4] p-5 flex flex-col items-center justify-center text-center space-y-3 border border-[#DBD6CA]">
+            <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-300 text-amber-700 flex items-center justify-center shadow-2xs">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                CAMERA UNAVAILABLE
+              </div>
+              <p className="text-xs text-neutral-600 leading-relaxed max-w-xs">
+                Camera access is unavailable. You can enter the barcode manually below, upload a package image, or use a demo scenario.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <Link
+                href="/inspection/new"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs transition-colors"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>Upload Image</span>
+              </Link>
+              <Link
+                href="/inspection/new"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-white hover:bg-neutral-100 text-neutral-800 border border-[#DBD6CA] text-xs font-bold shadow-2xs transition-colors"
+              >
+                <span>Demo Case</span>
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -150,7 +174,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-900 font-bold"
         >
           <ImageIcon className="w-3.5 h-3.5" />
-          <span>Use Package Image Instead</span>
+          <span>Use Package Image / Demo Scenarios</span>
         </Link>
       </div>
     </div>

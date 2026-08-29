@@ -10,17 +10,26 @@ export default function AnalyzingPage() {
   const { isAnalyzing, analysisStep, analysisLogs, activeInspection } = useInspection();
 
   useEffect(() => {
-    // If analysis is complete and we have results, navigate to results workspace
+    // 1. Normal completion: If analysis is complete and we have results, navigate to results
     if (!isAnalyzing && activeInspection) {
       const timer = setTimeout(() => {
         router.push('/inspection/results');
-      }, 500);
+      }, 400);
       return () => clearTimeout(timer);
     }
   }, [isAnalyzing, activeInspection, router]);
 
+  useEffect(() => {
+    // 2. Safety Fallback: Ensure user is NEVER stuck on analyzing/rendering screen indefinitely (max 5.5s)
+    const fallbackTimer = setTimeout(() => {
+      router.push('/inspection/results');
+    }, 5500);
+
+    return () => clearTimeout(fallbackTimer);
+  }, [router]);
+
   return (
-    <div className="min-h-[70vh] flex items-center justify-center p-4">
+    <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 space-y-4">
       <AnalysisProgress
         currentStep={analysisStep || 1}
         logs={

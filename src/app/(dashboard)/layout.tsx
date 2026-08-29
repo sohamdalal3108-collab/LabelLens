@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/context/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -10,6 +12,31 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const { isAuthenticated, isInitialized } = useAuth();
+
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isInitialized, router]);
+
+  // Show minimal clean loading state during initial session check
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-[#F7F5F0] flex items-center justify-center">
+        <div className="text-xs font-mono text-neutral-500 animate-pulse">
+          Verifying inspector authorization...
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent flashing protected dashboard content if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F5F0] text-neutral-900 flex flex-col selection:bg-orange-500 selection:text-white">
       <Header />
@@ -23,4 +50,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-

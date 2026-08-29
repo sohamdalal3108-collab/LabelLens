@@ -38,12 +38,30 @@ export function ImageUploader({ onStartAnalysis }: ImageUploaderProps) {
   const [activeMode, setActiveMode] = useState<'DEMO_SAMPLES' | 'UPLOAD'>('DEMO_SAMPLES');
   const [packageImages, setPackageImages] = useState<PackageImageItem[]>([]);
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, panelType?: PackageImageItem['panelType']) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    setUploadError(null);
 
-    const newItems: PackageImageItem[] = Array.from(files).map((file, index) => {
+    const validFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 15 * 1024 * 1024) {
+        setUploadError(`File "${file.name}" exceeds maximum allowed size (15MB).`);
+        continue;
+      }
+      if (!file.type.startsWith('image/')) {
+        setUploadError(`File "${file.name}" is not a valid image format.`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
+    const newItems: PackageImageItem[] = validFiles.map((file, index) => {
       const url = URL.createObjectURL(file);
       const quality: PackageImageItem['quality'] = file.size < 40000 ? 'LOW_QUALITY' : 'GOOD';
       return {
@@ -80,7 +98,8 @@ export function ImageUploader({ onStartAnalysis }: ImageUploaderProps) {
 
   const handleAnalyze = () => {
     if (packageImages.length === 0) return;
-    const primary = packageImages[0].file || packageImages[0].url;
+    const primary = packageImages[0].url || packageImages[0].file;
+    if (!primary) return;
     onStartAnalysis(primary, packageImages, selectedSampleId || undefined);
   };
 
@@ -195,6 +214,18 @@ export function ImageUploader({ onStartAnalysis }: ImageUploaderProps) {
                 onChange={handleFileUpload}
               />
             </label>
+          </div>
+        )}
+
+        {uploadError && (
+          <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{uploadError}</span>
+            </div>
+            <button onClick={() => setUploadError(null)} className="text-red-500 hover:text-red-800 text-xs font-bold">
+              Dismiss
+            </button>
           </div>
         )}
       </div>

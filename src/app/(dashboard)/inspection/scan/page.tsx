@@ -14,22 +14,32 @@ export default function ScanPage() {
   const [activeMode, setActiveMode] = useState<'CAMERA' | 'QR'>('CAMERA');
 
   const handleCameraCapture = async (imageDataUrl: string, panelType: string) => {
-    setCapturedImage(imageDataUrl);
-    router.push('/inspection/analyzing');
-    await runAnalysis({
-      fileOrUrl: imageDataUrl,
-      mode: 'CAMERA_CAPTURE'
-    });
-    router.push('/inspection/results');
+    try {
+      setCapturedImage(imageDataUrl);
+      router.push('/inspection/analyzing');
+      await runAnalysis({
+        fileOrUrl: imageDataUrl,
+        mode: 'CAMERA_CAPTURE'
+      });
+      router.push('/inspection/results');
+    } catch (err) {
+      console.error('Camera analysis issue, redirecting to results:', err);
+      router.push('/inspection/results');
+    }
   };
 
   const handleScanSuccess = async (decodedText: string, format?: string) => {
-    router.push('/inspection/analyzing');
-    await runAnalysis({
-      sampleId: 'sample-spices',
-      mode: 'QR_CODE'
-    });
-    router.push('/inspection/results');
+    try {
+      router.push('/inspection/analyzing');
+      await runAnalysis({
+        sampleId: 'sample-spices',
+        mode: 'QR_CODE'
+      });
+      router.push('/inspection/results');
+    } catch (err) {
+      console.error('Barcode analysis issue, redirecting to results:', err);
+      router.push('/inspection/results');
+    }
   };
 
   return (

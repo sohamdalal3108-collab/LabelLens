@@ -36,7 +36,10 @@ export default function ResultsPage() {
     hoveredBoxId,
     setSelectedFieldKey,
     setHoveredBoxId,
-    submitVerification
+    submitVerification,
+    correctField,
+    dismissViolation,
+    reinstateViolation
   } = useInspection();
 
   const [activeTab, setActiveTab] = useState<'DECLARATIONS' | 'VIOLATIONS' | 'SIGN_OFF'>('DECLARATIONS');
@@ -81,27 +84,16 @@ export default function ResultsPage() {
     setSelectedFieldKey(selectedFieldKey === fieldKey ? null : fieldKey);
   };
 
-  const handleFieldEdit = (fieldKey: string, newValue: string) => {
-    const decs = activeInspection.declarations as unknown as Record<string, ExtractedField | undefined>;
-    if (decs[fieldKey]) {
-      decs[fieldKey]!.officerEditedValue = newValue;
-    }
+  const handleFieldEdit = async (fieldKey: string, newValue: string) => {
+    await correctField(fieldKey, newValue);
   };
 
-  const handleDismissViolation = (violationId: string, reason: string) => {
-    const vio = activeInspection.violations.find((v) => v.id === violationId);
-    if (vio) {
-      vio.isDismissedByOfficer = true;
-      vio.officerDismissReason = reason;
-    }
+  const handleDismissViolation = async (violationId: string, reason: string) => {
+    await dismissViolation(violationId, reason);
   };
 
-  const handleReinstateViolation = (violationId: string) => {
-    const vio = activeInspection.violations.find((v) => v.id === violationId);
-    if (vio) {
-      vio.isDismissedByOfficer = false;
-      vio.officerDismissReason = undefined;
-    }
+  const handleReinstateViolation = async (violationId: string) => {
+    await reinstateViolation(violationId);
   };
 
   const handleOpenRuleModal = (ruleCode?: string) => {

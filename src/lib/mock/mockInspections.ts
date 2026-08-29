@@ -990,15 +990,41 @@ export const SAMPLE_INSPECTION_D_EDIBLE_OIL: InspectionRecord = {
         xmax: 0.50,
         label: 'Missing Mass Equiv',
         confidence: 0.95,
-        color: '#EF4444'
+        color: '#EF4444',
+        isSimulatedDemo: true
+      }
+    },
+    {
+      id: 'vio-004-b',
+      ruleCode: 'RULE_6_1_E_USP',
+      ruleTitle: 'Mandatory Unit Sale Price (USP) Omitted on Retail Pouch',
+      legalActSection: 'Rule 6(1)(e) of Legal Metrology (Packaged Commodities) Rules, 2011',
+      severity: 'MODERATE',
+      description: 'Retail package exceeding 100ml net volume must declare Unit Sale Price (₹ per ml / litre) alongside the MRP.',
+      extractedValueFound: 'MRP ₹145.00 (USP Absent)',
+      expectedRequirement: 'Unit Sale Price in rupees per ml or litre must be prominently indicated in proximity to the MRP.',
+      suggestedAction: 'Mandate correction of packaging artwork to include USP on all retail pouches.',
+      fieldKeyRelated: 'mrp',
+      confidence: 0.92,
+      evidenceBoundingBox: {
+        id: 'box-d-mrp',
+        fieldKey: 'mrp',
+        ymin: 0.56,
+        xmin: 0.52,
+        ymax: 0.68,
+        xmax: 0.88,
+        label: 'MRP without USP',
+        confidence: 0.92,
+        color: '#F59E0B',
+        isSimulatedDemo: true
       }
     }
   ],
   reportSummary: {
-    totalFieldsChecked: 9,
-    violationsCount: 1,
-    complianceScorePercentage: 82,
-    overallVerdict: 'CRITICAL VIOLATION OF RULE 12(2) (EDIBLE OIL MASS DECLARATION)',
+    totalFieldsChecked: 10,
+    violationsCount: 2,
+    complianceScorePercentage: 74,
+    overallVerdict: 'MULTIPLE POTENTIAL VIOLATIONS DETECTED (Rules 12(2) & 6(1)(e))',
     isSafeForFinalNotice: true
   },
   metadata: {
@@ -1048,7 +1074,7 @@ export const SAMPLE_PACKAGE_SCENARIOS: SamplePackageScenario[] = [
     category: 'Edible Oils',
     badgeStatus: 'POTENTIAL_VIOLATION',
     thumbnailUrl: SAMPLE_INSPECTION_D_EDIBLE_OIL.thumbnailUrl!,
-    description: 'Specific commodity non-compliance: Volume declared without mandatory net mass equivalent under Rule 12(2).',
+    description: 'Multiple statutory non-compliances: Volume declared without mandatory net mass equivalent under Rule 12(2) & omitted Unit Sale Price (USP).',
     sampleData: SAMPLE_INSPECTION_D_EDIBLE_OIL
   }
 ];

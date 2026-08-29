@@ -15,6 +15,8 @@ export default function NewInspectionPage() {
     try {
       if (typeof primaryImage === 'string') {
         setCapturedImage(primaryImage);
+      } else if (typeof window !== 'undefined' && primaryImage instanceof File) {
+        setCapturedImage(URL.createObjectURL(primaryImage));
       }
       router.push('/inspection/analyzing');
       await runAnalysis({
@@ -24,7 +26,8 @@ export default function NewInspectionPage() {
       });
       router.push('/inspection/results');
     } catch (err) {
-      console.error('Analysis failed:', err);
+      console.error('Analysis execution issue, redirecting to results:', err);
+      router.push('/inspection/results');
     }
   };
 

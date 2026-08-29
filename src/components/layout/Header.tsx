@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useDemoMode } from '@/lib/context/DemoModeContext';
 import {
@@ -17,9 +17,16 @@ import {
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { officer, logout } = useAuth();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    setDropdownOpen(false);
+    logout();
+    router.replace('/login');
+  };
 
   // Derive simple breadcrumb or section title
   const getSectionTitle = () => {
@@ -126,8 +133,8 @@ export function Header() {
                       <span>Officer Settings</span>
                     </Link>
                     <button
-                      onClick={logout}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors text-left font-medium"
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors text-left font-medium cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>

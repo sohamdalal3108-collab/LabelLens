@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { InspectionRecord } from '@/lib/types/inspection';
+import { useInspection } from '@/lib/context/InspectionContext';
 import { ComplianceBadge } from '@/components/shared/ComplianceBadge';
 import { formatDateTime } from '@/lib/utils/formatters';
 import { ArrowRight, Eye, Camera, QrCode, UploadCloud } from 'lucide-react';
@@ -12,6 +13,8 @@ interface RecentInspectionsProps {
 }
 
 export function RecentInspections({ inspections }: RecentInspectionsProps) {
+  const { setActiveInspection } = useInspection();
+
   const getMethodLabel = (mode: string) => {
     switch (mode) {
       case 'QR_CODE':
@@ -90,6 +93,7 @@ export function RecentInspections({ inspections }: RecentInspectionsProps) {
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <Link
                       href={`/inspection/${item.id}`}
+                      onClick={() => setActiveInspection(item)}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" />

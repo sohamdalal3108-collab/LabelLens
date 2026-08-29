@@ -1,32 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { InspectionRecord, ComplianceStatus } from '@/lib/types/inspection';
-import { InspectionService } from '@/lib/api/inspectionService';
+import { useInspection } from '@/lib/context/InspectionContext';
 import { ComplianceBadge } from '@/components/shared/ComplianceBadge';
 import { formatDateTime } from '@/lib/utils/formatters';
-import { Search, Eye, Filter, Download, Plus, Camera } from 'lucide-react';
+import { Search, Eye, Plus, Camera } from 'lucide-react';
 
 export default function HistoryPage() {
-  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { inspections, setActiveInspection } = useInspection();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const records = await InspectionService.getInspections();
-        setInspections(records);
-      } catch (err) {
-        console.error('Failed to load history:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
 
   const filtered = inspections.filter((item) => {
     const matchesSearch =
@@ -181,6 +165,7 @@ export default function HistoryPage() {
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <Link
                         href={`/inspection/${item.id}`}
+                        onClick={() => setActiveInspection(item)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold shadow-xs transition-colors"
                       >
                         <Eye className="w-3.5 h-3.5" />

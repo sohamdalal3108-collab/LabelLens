@@ -1,24 +1,46 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, RefreshCw, Check, RotateCcw, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import {
+  Camera,
+  RefreshCw,
+  Check,
+  RotateCcw,
+  AlertCircle,
+  UploadCloud,
+  Layers,
+  FileWarning,
+  X,
+  Play
+} from 'lucide-react';
+import Link from 'next/link';
 
 interface CameraCaptureProps {
   onCapture: (imageDataUrl: string, panelType: string) => void;
+  onUseDemoCase?: () => void;
 }
 
-export function CameraCapture({ onCapture }: CameraCaptureProps) {
+export function CameraCapture({ onCapture, onUseDemoCase }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<'Front PDP' | 'Back Panel' | 'MRP & Dates'>('Front PDP');
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const startCamera = async () => {
+    setCameraError(null);
+    setFileError(null);
+
     try {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera hardware access is not supported on this browser or environment.');
       }
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -33,11 +55,20 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
+      setIsCameraActive(true);
       setCameraError(null);
     } catch (err: unknown) {
       console.warn('Camera stream error:', err);
-      const e = err as { message?: string };
-      setCameraError(e.message || 'Unable to access field camera device.');
+      const e = err as { name?: string; message?: string };
+      setIsCameraActive(false);
+
+      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        setCameraError('Camera access was denied by your browser settings.');
+      } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+        setCameraError('No physical camera device detected on this system.');
+      } else {
+        setCameraError(e.message || 'Camera device unavailable or permission denied.');
+      }
     }
   };
 
@@ -65,19 +96,48 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
 
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.90);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
       setCapturedImage(dataUrl);
+      setFileError(null);
     }
   };
 
   const handleRetake = () => {
     setCapturedImage(null);
+    setFileError(null);
+    if (!isCameraActive) {
+      startCamera();
+    }
   };
 
   const handleConfirm = () => {
     if (capturedImage) {
       onCapture(capturedImage, activePanel);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size limit: 15MB
+    if (file.size > 15 * 1024 * 1024) {
+      setFileError('The selected image is larger than 15MB. Please choose a smaller file.');
+      return;
+    }
+
+    // Check type
+    if (!file.type.startsWith('image/')) {
+      setFileError('Invalid file format. Please upload a standard image file (JPEG, PNG, WEBP).');
+      return;
+    }
+
+    setFileError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCapturedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -104,7 +164,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
         {capturedImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={capturedImage} alt="Captured Package" className="w-full h-full object-contain" />
-        ) : (
+        ) : isCameraActive ? (
           <>
             <video
               ref={videoRef}
@@ -113,86 +173,129 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
               muted
               className="w-full h-full object-cover"
             />
-            {/* Simple rectangular guide */}
+            {/* Alignment Guideline Box */}
             <div className="pointer-events-none absolute inset-8 border border-dashed border-white/60 rounded flex items-center justify-center">
               <div className="text-[11px] font-bold text-white bg-black/75 px-3 py-1 rounded border border-white/20 font-mono">
                 Align {activePanel}
               </div>
             </div>
           </>
-        )}
-
-        {cameraError && !capturedImage && (
-          <div className="absolute inset-0 bg-neutral-900 p-6 flex flex-col items-center justify-center text-center space-y-3">
-            <AlertCircle className="w-8 h-8 text-amber-400" />
-            <div>
-              <div className="text-xs font-bold text-white">Camera Device Inactive</div>
-              <p className="text-[11px] text-neutral-400 mt-1 max-w-xs">{cameraError}</p>
+        ) : (
+          /* PROFESSIONAL CAMERA FALLBACK SCREEN (Phase 4 Specification) */
+          <div className="absolute inset-0 bg-[#FAF8F4] p-6 flex flex-col items-center justify-center text-center space-y-4 border border-[#DBD6CA]">
+            <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-300 text-amber-700 flex items-center justify-center shadow-2xs">
+              <AlertCircle className="w-6 h-6" />
             </div>
-            <label className="px-4 py-2 rounded bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold cursor-pointer">
-              <span>Select File from Device</span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => setCapturedImage(reader.result as string);
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
-            </label>
+
+            <div className="space-y-1 max-w-sm">
+              <div className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                CAMERA UNAVAILABLE
+              </div>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Camera access is unavailable. You can continue using an uploaded package image or a demonstration case.
+              </p>
+              {cameraError && (
+                <p className="text-[10px] text-neutral-400 font-mono mt-1">
+                  Reason: {cameraError}
+                </p>
+              )}
+            </div>
+
+            {/* Direct Action Alternatives */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+              <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white text-xs font-bold cursor-pointer shadow-xs transition-colors">
+                <UploadCloud className="w-4 h-4" />
+                <span>Upload Package Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </label>
+
+              <Link
+                href="/inspection/new"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-white hover:bg-neutral-100 text-neutral-800 border border-[#DBD6CA] text-xs font-bold shadow-2xs transition-colors"
+              >
+                <Layers className="w-4 h-4 text-orange-600" />
+                <span>Use Demo Case</span>
+              </Link>
+
+              <button
+                onClick={startCamera}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-medium transition-colors"
+                title="Retry camera access"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Retry</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
 
+      {/* File / Validation Error Notification */}
+      {fileError && (
+        <div className="w-full p-2.5 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 font-medium">
+            <FileWarning className="w-4 h-4 shrink-0 text-red-600" />
+            <span>{fileError}</span>
+          </div>
+          <button onClick={() => setFileError(null)} className="text-red-500 hover:text-red-800">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Controls Bar */}
       <div className="flex items-center justify-between w-full max-w-md pt-1">
         {!capturedImage ? (
-          <>
-            <button
-              onClick={toggleCamera}
-              className="p-2.5 rounded bg-white hover:bg-[#FAF8F4] text-neutral-700 border border-[#DBD6CA] text-xs font-bold flex items-center gap-1.5 shadow-2xs"
-              title="Switch Camera Device"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Switch</span>
-            </button>
+          isCameraActive ? (
+            <>
+              <button
+                onClick={toggleCamera}
+                className="p-2.5 rounded bg-white hover:bg-[#FAF8F4] text-neutral-700 border border-[#DBD6CA] text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                title="Switch Camera Device"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Switch</span>
+              </button>
 
-            {/* Practical Shutter Button */}
-            <button
-              onClick={handleCapture}
-              className="px-6 py-2.5 rounded bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white text-xs font-bold shadow-xs flex items-center gap-2 transition-all hover:translate-y-[-0.5px]"
-            >
-              <Camera className="w-4 h-4" />
-              <span>Capture Image</span>
-            </button>
+              {/* Shutter Button */}
+              <button
+                onClick={handleCapture}
+                className="px-6 py-2.5 rounded bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white text-xs font-bold shadow-xs flex items-center gap-2 transition-all hover:translate-y-[-0.5px]"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Capture Image</span>
+              </button>
 
-            <label
-              className="p-2.5 rounded bg-white hover:bg-[#FAF8F4] text-neutral-700 border border-[#DBD6CA] text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-2xs"
-              title="Upload File Instead"
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>Browse</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => setCapturedImage(reader.result as string);
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
-            </label>
-          </>
+              <label
+                className="p-2.5 rounded bg-white hover:bg-[#FAF8F4] text-neutral-700 border border-[#DBD6CA] text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                title="Upload File Instead"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>Browse</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </label>
+            </>
+          ) : (
+            <div className="flex items-center justify-center gap-2 w-full">
+              <button
+                onClick={startCamera}
+                className="px-5 py-2 rounded bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold shadow-xs flex items-center gap-2"
+              >
+                <Play className="w-3.5 h-3.5 text-orange-400" />
+                <span>Start Camera</span>
+              </button>
+            </div>
+          )
         ) : (
           <div className="flex items-center justify-center gap-3 w-full">
             <button
