@@ -3,14 +3,15 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
-import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, UserPlus, LogIn } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginWithEmail } = useAuth();
-  const [email, setEmail] = useState('inspector@example.com');
-  const [password, setPassword] = useState('••••••••');
+  const { loginWithEmail, signUpWithEmail } = useAuth();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,13 +25,22 @@ export default function LoginPage() {
       return;
     }
 
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await loginWithEmail(email.trim(), password);
+      if (mode === 'signin') {
+        await loginWithEmail(email.trim(), password);
+      } else {
+        await signUpWithEmail(email.trim(), password);
+      }
       router.push('/dashboard');
     } catch (err: unknown) {
       const e = err as Error;
-      setError(e.message || 'Authentication failed. Please check your credentials.');
+      setError(e.message || (mode === 'signin' ? 'Email or password is incorrect' : 'Failed to create account.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +53,14 @@ export default function LoginPage() {
       await loginWithEmail('inspector@example.com', 'password123');
       router.push('/dashboard');
     } catch {
-      setError('Failed to sign in with demo account.');
+      // If demo account doesn't exist yet, try creating it or show friendly error
+      try {
+        await signUpWithEmail('inspector@example.com', 'password123');
+        router.push('/dashboard');
+      } catch (err: unknown) {
+        const e = err as Error;
+        setError(e.message || 'Failed to sign in with demo account.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -65,15 +82,51 @@ export default function LoginPage() {
             <div className="text-[10px] font-bold text-orange-600 font-mono uppercase tracking-wider">
               FIELD INSPECTION UNIT
             </div>
-            <h1 className="text-xl font-black text-neutral-900 tracking-tight">Officer Portal Sign-In</h1>
+            <h1 className="text-xl font-black text-neutral-900 tracking-tight">
+              {mode === 'signin' ? 'Officer Portal Sign-In' : 'Officer Portal Registration'}
+            </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
               Legal Metrology Field Verification Platform
             </p>
           </div>
         </div>
 
-        {/* Login Form Card */}
+        {/* Login / Signup Form Card */}
         <div className="p-6 rounded-xl bg-white border border-[#DBD6CA] shadow-sm space-y-5">
+          {/* Mode Switch Tabs */}
+          <div className="flex border-b border-[#E5E2D9]">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signin');
+                setError(null);
+              }}
+              className={`flex-1 pb-2 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                mode === 'signin'
+                  ? 'border-orange-600 text-orange-600'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setError(null);
+              }}
+              className={`flex-1 pb-2 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                mode === 'signup'
+                  ? 'border-orange-600 text-orange-600'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Sign Up</span>
+            </button>
+          </div>
+
           {error && (
             <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -112,7 +165,10 @@ export default function LoginPage() {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
                   className="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF8F4] border border-[#DBD6CA] rounded-md text-neutral-900 focus:outline-none focus:border-orange-500 shadow-2xs"
                   required
                 />
@@ -124,10 +180,40 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full py-2.5 px-4 rounded bg-orange-600 hover:bg-orange-700 active:bg-orange-800 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition-all hover:translate-y-[-0.5px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>{isSubmitting ? 'Signing In...' : 'Sign In'}</span>
+              <span>
+                {isSubmitting
+                  ? mode === 'signin'
+                    ? 'Signing In...'
+                    : 'Creating Account...'
+                  : mode === 'signin'
+                  ? 'Sign In'
+                  : 'Create Account'}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          {/* Switch mode footer */}
+          <div className="text-center pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'signin' ? 'signup' : 'signin');
+                setError(null);
+              }}
+              className="text-xs text-neutral-600 hover:text-orange-600 transition-colors font-medium cursor-pointer"
+            >
+              {mode === 'signin' ? (
+                <>
+                  Need an officer account? <span className="font-bold underline">Sign Up</span>
+                </>
+              ) : (
+                <>
+                  Already registered? <span className="font-bold underline">Sign In</span>
+                </>
+              )}
+            </button>
+          </div>
 
           {/* Quick Demo Sign-In */}
           <div className="pt-3 border-t border-[#E5E2D9]">

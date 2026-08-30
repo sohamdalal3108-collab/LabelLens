@@ -22,9 +22,9 @@ export function Header() {
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDropdownOpen(false);
-    logout();
+    await logout();
     router.replace('/login');
   };
 
