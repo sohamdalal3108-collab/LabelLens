@@ -5,6 +5,7 @@ import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signOut,
   onAuthStateChanged,
   AuthError
@@ -43,6 +44,11 @@ const getOfficerFromFirebaseUser = (user: User | null): OfficerProfile | null =>
   };
 };
 
+export interface UnverifiedEmailError extends Error {
+  code: 'auth/unverified-email';
+  email: string;
+}
+
 interface AuthContextType {
   user: User | null;
   officer: OfficerProfile | null;
@@ -51,6 +57,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  resendVerification?: (email: string, password?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,8 +69,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setOfficer(getOfficerFromFirebaseUser(currentUser));
+      if (currentUser && currentUser.emailVerified) {
+        setUser(currentUser);
+        setOfficer(getOfficerFromFirebaseUser(currentUser));
+      } else {
+        setUser(null);
+        setOfficer(null);
+      }
       setIsInitialized(true);
     });
 
@@ -77,9 +89,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, trimmed, password);
+      const userCredential = await signInWithEmailAndPassword(auth, trimmed, password);
+
+      // Block access if email is not verified
+      if (!userCredential.user.emailVerified) {
+        try {
+          // Re-send verification email upon unverified login attempt
+          await sendEmailVerification(userCredential.user);
+        } catch (sendErr) {
+          console.warn('Could not re-send verification email:', sendErr);
+        }
+
+        // Sign out immediately so user session is not kept active
+        await signOut(auth);
+
+        const unverifiedError = new Error('EMAIL_NOT_VERIFIED') as UnverifiedEmailError;
+        unverifiedError.code = 'auth/unverified-email';
+        unverifiedError.email = userCredential.user.email || trimmed;
+        throw unverifiedError;
+      }
     } catch (err: unknown) {
-      const authError = err as AuthError;
+      const authError = err as AuthError & { code?: string; email?: string };
+      if (authError.code === 'auth/unverified-email' || authError.message === 'EMAIL_NOT_VERIFIED') {
+        throw authError;
+      }
+
       if (
         authError.code === 'auth/invalid-credential' ||
         authError.code === 'auth/user-not-found' ||
@@ -104,7 +138,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, trimmed, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, trimmed, password);
+      // Send verification email
+      await sendEmailVerification(userCredential.user);
+      // Do not sign user in automatically — sign out immediately
+      await signOut(auth);
     } catch (err: unknown) {
       const authError = err as AuthError;
       if (authError.code === 'auth/email-already-in-use') {
@@ -116,6 +154,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         throw new Error(authError.message || 'Failed to create account. Please try again.');
       }
+    }
+  };
+
+  const resendVerification = async (email: string, password?: string): Promise<void> => {
+    const trimmed = email.trim();
+    if (!trimmed) throw new Error('Please provide an email address.');
+    if (password) {
+      const cred = await signInWithEmailAndPassword(auth, trimmed, password);
+      await sendEmailVerification(cred.user);
+      await signOut(auth);
     }
   };
 
@@ -135,10 +183,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         officer,
-        isAuthenticated: Boolean(user),
+        isAuthenticated: Boolean(user && user.emailVerified),
         isInitialized,
         loginWithEmail,
         signUpWithEmail,
+        resendVerification,
         logout
       }}
     >
@@ -154,3 +203,4 @@ export function useAuth() {
   }
   return context;
 }
+

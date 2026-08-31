@@ -34,12 +34,18 @@ export default function LoginPage() {
     try {
       if (mode === 'signin') {
         await loginWithEmail(email.trim(), password);
+        router.push('/dashboard');
       } else {
         await signUpWithEmail(email.trim(), password);
+        router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
       }
-      router.push('/dashboard');
     } catch (err: unknown) {
-      const e = err as Error;
+      const e = err as { code?: string; message?: string; email?: string };
+      if (e.code === 'auth/unverified-email' || e.message === 'EMAIL_NOT_VERIFIED') {
+        const unverifiedEmail = e.email || email.trim();
+        router.push(`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`);
+        return;
+      }
       setError(e.message || (mode === 'signin' ? 'Email or password is incorrect' : 'Failed to create account.'));
     } finally {
       setIsSubmitting(false);
@@ -52,14 +58,19 @@ export default function LoginPage() {
     try {
       await loginWithEmail('inspector@example.com', 'password123');
       router.push('/dashboard');
-    } catch {
-      // If demo account doesn't exist yet, try creating it or show friendly error
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string; email?: string };
+      if (e.code === 'auth/unverified-email' || e.message === 'EMAIL_NOT_VERIFIED') {
+        router.push(`/verify-email?email=${encodeURIComponent('inspector@example.com')}`);
+        return;
+      }
+      // If demo account doesn't exist yet, try creating it
       try {
         await signUpWithEmail('inspector@example.com', 'password123');
-        router.push('/dashboard');
-      } catch (err: unknown) {
-        const e = err as Error;
-        setError(e.message || 'Failed to sign in with demo account.');
+        router.push(`/verify-email?email=${encodeURIComponent('inspector@example.com')}`);
+      } catch (signupErr: unknown) {
+        const signupE = signupErr as Error;
+        setError(signupE.message || 'Failed to sign in with demo account.');
       }
     } finally {
       setIsSubmitting(false);
