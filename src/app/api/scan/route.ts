@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { runOCRBatch } from "@/lib/services/ocrService";
 import { extractFields } from "@/lib/services/fieldExtraction";
 import { evaluate } from "@/lib/services/rulesEngine";
+import { persistInspection } from "@/lib/services/backendClient";
 
-// Tesseract.js needs Node runtime (not Edge) — it uses filesystem/WASM internals.
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
@@ -27,6 +27,19 @@ export async function POST(req: NextRequest) {
     const fields = extractFields(fullText);
     const report = evaluate(fields);
 
+    const officerToken = req.headers
+      .get("authorization")
+      ?.replace(/^Bearer\s+/i, "");
+
+    const persistResult = await persistInspection({
+      barcode: barcode || null,
+      fields,
+      violations: report.violations,
+      flaggedSubstances: report.flagged_substances,
+      rawOcrText: fullText,
+      officerToken,
+    });
+
     return NextResponse.json({
       barcode: barcode || null,
       source: "ocr",
@@ -34,33 +47,11 @@ export async function POST(req: NextRequest) {
       raw_ocr_text: fullText,
       ocr_block_count: blocks.length,
       ...report,
+      persisted: persistResult.persisted,
+      persist_reason: persistResult.persisted ? undefined : persistResult.reason,
     });
   } catch (err) {
     console.error("Scan error:", err);
     return NextResponse.json({ error: "scan_failed" }, { status: 500 });
   }
 }
-
-
-import { persistInspection } from "@/lib/services/backendClient";
-
-// after report = evaluate(fields):
-const officerToken = req.headers.get("authorization")?.replace("Bearer ", "");
-const persistResult = await persistInspection({
-  barcode: barcode || null,
-  fields,
-  violations: report.violations,
-  flaggedSubstances: report.flagged_substances,
-  rawOcrText: fullText,
-  officerToken,
-});
-
-return NextResponse.json({
-  barcode: barcode || null,
-  source: "ocr",
-  fields,
-  raw_ocr_text: fullText,
-  ocr_block_count: blocks.length,
-  ...report,
-  persisted: persistResult.persisted, // frontend can show a "saved to dashboard" indicator
-});
