@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Potassium Bromate",
+    "aliases": ["potassium bromate", "KBrO3", "E924"],
+    "status": "banned",
+    "regulation": "FSSAI banned as a flour treatment agent (2016 notification)",
+    "note": "Formerly used in bread; classified as a possible carcinogen"
+  },
+  {
+    "name": "Calcium Carbide",
+    "aliases": ["calcium carbide"],
+    "status": "banned",
+    "regulation": "FSS (Prohibition and Restriction on Sales) Regulations, 2011 — Reg. 2.3.5",
+    "note": "Used illegally for artificial fruit ripening"
+  },
+  {
+    "name": "Rhodamine B",
+    "aliases": ["rhodamine b"],
+    "status": "banned",
+    "regulation": "FSS (Food Product Standards and Food Additives) Regulations — non-permitted colour",
+    "note": "Industrial dye sometimes found illegally in food colouring"
+  },
+  {
+    "name": "Sodium Benzoate",
+    "aliases": ["sodium benzoate", "E211"],
+    "status": "restricted",
+    "regulation": "FSS (Food Product Standards and Food Additives) Regulations — permitted only up to prescribed limits per category",
+    "note": "Limit varies by food category; category-specific lookup needed for a full check — placeholder for v1"
+  },
+  {
+    "name": "Monosodium Glutamate",
+    "aliases": ["msg", "monosodium glutamate", "E621"],
+    "status": "permitted_with_disclosure",
+    "regulation": "FSS Regulations — must be declared on label if used",
+    "note": "Not banned, but non-disclosure is itself a violation"
+  }
+]

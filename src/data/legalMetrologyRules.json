@@ -1,0 +1,65 @@
+[
+  {
+    "id": "LM-001",
+    "field": "mrp",
+    "requirement": "MRP must be declared on the package",
+    "section": "Legal Metrology (Packaged Commodities) Rules, 2011 — Rule 6(1)(f)",
+    "check": "field_present"
+  },
+  {
+    "id": "LM-002",
+    "field": "mrp_inclusive_taxes_stated",
+    "requirement": "MRP must state it is inclusive of all taxes",
+    "section": "Legal Metrology (Packaged Commodities) Rules, 2011 — Rule 6(1)(f)",
+    "check": "field_true"
+  },
+  {
+    "id": "LM-003",
+    "field": "net_quantity",
+    "requirement": "Net quantity in standard units (g/kg/ml/l) must be declared",
+    "section": "Legal Metrology (Packaged Commodities) Rules, 2011 — Rule 6(1)(c)",
+    "check": "field_present"
+  },
+  {
+    "id": "LM-004",
+    "field": "manufacturer_address",
+    "requirement": "Name and address of manufacturer/packer/importer must be declared",
+    "section": "Legal Metrology (Packaged Commodities) Rules, 2011 — Rule 6(1)(a)",
+    "check": "field_present"
+  },
+  {
+    "id": "LM-005",
+    "field": "mfg_date",
+    "requirement": "Month and year of manufacture/packing/import must be declared",
+    "section": "Legal Metrology (Packaged Commodities) Rules, 2011 — Rule 6(1)(d)",
+    "check": "field_present"
+  },
+  {
+    "id": "LM-006",
+    "field": "consumer_care",
+    "requirement": "Consumer care/complaint contact details must be declared",
+    "section": "Legal Metrology (Packaged Commodities) Rules, 2011 — Rule 6(1)(b)",
+    "check": "field_present"
+  },
+  {
+    "id": "FSSAI-001",
+    "field": "fssai_license",
+    "requirement": "FSSAI license number (14 digits) must be printed",
+    "section": "FSS (Licensing and Registration of Food Businesses) Regulations, 2011 — Reg. 2.1.9",
+    "check": "field_present"
+  },
+  {
+    "id": "FSSAI-002",
+    "field": "best_before",
+    "requirement": "Best before / use-by date must be declared",
+    "section": "FSS (Packaging and Labelling) Regulations, 2011 — Reg. 2.4",
+    "check": "field_present"
+  },
+  {
+    "id": "FSSAI-003",
+    "field": "ingredients",
+    "requirement": "Ingredients must be listed in descending order of proportion",
+    "section": "FSS (Packaging and Labelling) Regulations, 2011 — Reg. 2.2.1",
+    "check": "field_present_nonempty"
+  }
+]
