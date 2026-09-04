@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { lookupByBarcode } from "@/lib/services/openFoodFacts";
+import { lookupUPCItemDB } from "@/lib/services/upcItemDb";
 
 export async function POST(req: NextRequest) {
   const { barcode } = await req.json();
@@ -13,23 +14,15 @@ export async function POST(req: NextRequest) {
     if (product) {
       return NextResponse.json({ found: true, source: "openfoodfacts", product });
     }
+
+    const upcProduct = await lookupUPCItemDB(barcode);
+    if (upcProduct) {
+      return NextResponse.json({ found: true, source: "upcitemdb", product: upcProduct });
+    }
+
     return NextResponse.json({ found: false, reason: "not_in_database" });
   } catch (err) {
     console.error("Lookup error:", err);
     return NextResponse.json({ error: "lookup_failed" }, { status: 500 });
   }
 }
-
-import { lookupUPCItemDB } from "@/lib/services/upcItemDb";
-
-const product = await lookupByBarcode(barcode);
-if (product) {
-  return NextResponse.json({ found: true, source: "openfoodfacts", product });
-}
-
-const upcProduct = await lookupUPCItemDB(barcode);
-if (upcProduct) {
-  return NextResponse.json({ found: true, source: "upcitemdb", product: upcProduct });
-}
-
-return NextResponse.json({ found: false, reason: "not_in_database" });
