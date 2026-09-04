@@ -40,3 +40,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "scan_failed" }, { status: 500 });
   }
 }
+
+
+import { persistInspection } from "@/lib/services/backendClient";
+
+// after report = evaluate(fields):
+const officerToken = req.headers.get("authorization")?.replace("Bearer ", "");
+const persistResult = await persistInspection({
+  barcode: barcode || null,
+  fields,
+  violations: report.violations,
+  flaggedSubstances: report.flagged_substances,
+  rawOcrText: fullText,
+  officerToken,
+});
+
+return NextResponse.json({
+  barcode: barcode || null,
+  source: "ocr",
+  fields,
+  raw_ocr_text: fullText,
+  ocr_block_count: blocks.length,
+  ...report,
+  persisted: persistResult.persisted, // frontend can show a "saved to dashboard" indicator
+});
